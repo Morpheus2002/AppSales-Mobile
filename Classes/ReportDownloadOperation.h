@@ -14,7 +14,7 @@
 @interface ReportDownloadOperation : NSOperation <LoginManagerDelegate> {
 	ASAccount *_account;
 	NSString *accessToken;
-	NSString *providerID;
+	NSString *contentProviderId;
 	NSMutableDictionary *downloadedVendors;
 	NSPersistentStoreCoordinator *psc;
 	NSManagedObjectID *accountObjectID;

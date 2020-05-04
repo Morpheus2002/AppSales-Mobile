@@ -34,7 +34,6 @@ static NSString *NSStringPercentEscaped(NSString *string) {
 	self = [super init];
 	if (self) {
 		accessToken = [account.accessToken copy];
-		providerID = [account.providerID copy];
 		_account = account;
 		accountObjectID = [account.objectID copy];
 		psc = [account.managedObjectContext persistentStoreCoordinator];
@@ -93,7 +92,7 @@ static NSString *NSStringPercentEscaped(NSString *string) {
 			NSMutableArray *availableReportDateStrings = [NSMutableArray array];
 			NSMutableSet *availableReportDates = [NSMutableSet set];
 
-			NSInteger maxNumberOfAvailableReports = [dateType isEqualToString:@"Daily"] ? 90 : 20;
+			NSInteger maxNumberOfAvailableReports = [dateType isEqualToString:@"Daily"] ? 31 : 20;
 			for (int i = 1; i <= maxNumberOfAvailableReports; i++) {
 				NSDate *date = nil;
 				if ([dateType isEqualToString:@"Daily"]) {
@@ -156,7 +155,7 @@ static NSString *NSStringPercentEscaped(NSString *string) {
 					}
 				}
 
-				NSString *query = [NSString stringWithFormat:@"a=%@, %@.getReport, %@,%@,Summary,%@,%@", providerID, salesKey, vendorID, salesKey, dateType, reportDateString];
+				NSString *query = [NSString stringWithFormat:@"%@.getReport, %@,%@,Summary,%@,%@", salesKey, vendorID, salesKey, dateType, reportDateString];
 
 				NSDictionary *getReportData = @{@"accesstoken": NSStringPercentEscaped(accessToken),
 												@"version":     kITCReporterVersion,
@@ -312,7 +311,7 @@ static NSString *NSStringPercentEscaped(NSString *string) {
 	}
 }
 
-- (void)loginSucceeded:(LoginManager *)loginManager {
+- (void)loginSucceeded {
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0ul), ^{
 		@autoreleasepool {
 
@@ -320,10 +319,15 @@ static NSString *NSStringPercentEscaped(NSString *string) {
 
 			//==== Payments
 
+			NSURL *userDetailURL = [NSURL URLWithString:[kITCBaseURL stringByAppendingString:kITCUserDetailAction]];
+			NSData *userDetailData = [NSURLConnection sendSynchronousRequest:[NSURLRequest requestWithURL:userDetailURL] returningResponse:nil error:nil];
+			NSDictionary *userDetail = [NSJSONSerialization JSONObjectWithData:userDetailData options:0 error:nil];
+			contentProviderId = userDetail[@"data"][@"contentProviderId"];
+
 			if (self.isCancelled) {
 				[self completeDownloadWithStatus:NSLocalizedString(@"Canceled", nil)];
-			} else if (providerID.length > 0) {
-				NSURL *paymentVendorsURL = [NSURL URLWithString:[kITCBaseURL stringByAppendingFormat:kITCPaymentVendorsAction, providerID]];
+			} else if (contentProviderId.length > 0) {
+				NSURL *paymentVendorsURL = [NSURL URLWithString:[kITCBaseURL stringByAppendingFormat:kITCPaymentVendorsAction, contentProviderId]];
 				NSData *paymentVendorsData = [NSURLConnection sendSynchronousRequest:[NSURLRequest requestWithURL:paymentVendorsURL] returningResponse:nil error:nil];
 				NSDictionary *paymentVendors = [NSJSONSerialization JSONObjectWithData:paymentVendorsData options:0 error:nil];
 				NSArray *sapVendors = paymentVendors[@"data"];
@@ -353,7 +357,7 @@ static NSString *NSStringPercentEscaped(NSString *string) {
 	});
 }
 
-- (void)loginFailed:(LoginManager *)loginManager {
+- (void)loginFailed {
 	[self completeDownload];
 }
 
@@ -422,7 +426,7 @@ static NSString *NSStringPercentEscaped(NSString *string) {
 					break;
 				}
 
-				NSURL *paymentURL = [NSURL URLWithString:[kITCBaseURL stringByAppendingFormat:kITCPaymentVendorsPaymentAction, providerID, vendorID, year, month]];
+				NSURL *paymentURL = [NSURL URLWithString:[kITCBaseURL stringByAppendingFormat:kITCPaymentVendorsPaymentAction, contentProviderId, vendorID, year, month]];
 				NSData *paymentData = [NSURLConnection sendSynchronousRequest:[NSURLRequest requestWithURL:paymentURL] returningResponse:nil error:nil];
 				NSDictionary *payment = [NSJSONSerialization JSONObjectWithData:paymentData options:0 error:nil];
 				payment = payment[@"data"];

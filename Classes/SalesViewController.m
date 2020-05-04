@@ -53,6 +53,8 @@
 		
 		dateFormatter = [[NSDateFormatter alloc] init];
 		[dateFormatter setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
+        NSLocale *locale = [[NSLocale alloc] initWithLocaleIdentifier:@"de"];
+        [dateFormatter setLocale:locale];
 		
 		numberFormatter = [[NSNumberFormatter alloc] init];
 		numberFormatter.locale = [NSLocale currentLocale];
@@ -88,6 +90,10 @@
 - (void)loadView {
 	[super loadView];
 	self.edgesForExtendedLayout = UIRectEdgeNone;
+    
+    if (@available(iOS 13.0, *)) {
+        self.view.backgroundColor = [UIColor systemBackgroundColor];
+    }
 	
 	self.viewMode = [[NSUserDefaults standardUserDefaults] integerForKey:kSettingDashboardViewMode];
 	if ((self.viewMode == DashboardViewModeTotalRevenue) || (self.viewMode == DashboardViewModeTotalSales)) {
@@ -96,7 +102,7 @@
 	
 	BOOL iPad = ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad);
 	
-	CGFloat graphHeight = iPad ? 450.0 : self.view.bounds.size.height * 0.5;
+	CGFloat graphHeight = iPad ? 450.0 : self.view.bounds.size.height * 0.4;
 	self.graphView = [[GraphView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, graphHeight)];
 	graphView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 	graphView.delegate = self;
@@ -230,7 +236,7 @@
 		self.shadowView.hidden = YES;
 		[self.graphView reloadValuesAnimated:NO];
 	} else {
-		CGFloat graphHeight = [UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad ? 450.0 : self.view.bounds.size.height * 0.5;
+		CGFloat graphHeight = [UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad ? 450.0 : self.view.bounds.size.height * 0.4;
 		self.graphView.frame = CGRectMake(0, 0, self.view.bounds.size.width, graphHeight);
 		self.topView.frame = CGRectMake(0, 0, self.view.bounds.size.width, graphHeight);
 		self.productsTableView.frame = CGRectMake(0, CGRectGetMaxY(self.topView.frame), self.view.bounds.size.width, self.view.bounds.size.height - self.topView.bounds.size.height);
@@ -340,27 +346,24 @@
 #pragma mark - Actions
 
 - (void)downloadReports:(id)sender {
-	if ((account.providerID == nil) || (account.providerID.length == 0)) {
-		[[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Provider ID Missing", nil)
-									message:NSLocalizedString(@"Provider ID not set for this account. Please go to the account's settings and fill in the missing information.", nil)
-								   delegate:nil
-						  cancelButtonTitle:NSLocalizedString(@"OK", nil)
-						  otherButtonTitles:nil] show];
-	} else if ((account.accessToken == nil) || (account.accessToken.length == 0)) {
-		[[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Access Token Missing", nil)
-									message:NSLocalizedString(@"Access token not set for this account. Please go to the account's settings and fill in the missing information.", nil)
-								   delegate:nil
-						  cancelButtonTitle:NSLocalizedString(@"OK", nil)
-						  otherButtonTitles:nil] show];
-	} else if ((account.vendorID == nil) || (account.vendorID.length == 0)) {
-		[[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Vendor ID Missing", nil)
-									message:NSLocalizedString(@"You have not entered a vendor ID for this account. Please go to the account's settings and fill in the missing information.", nil)
-								   delegate:nil
-						  cancelButtonTitle:NSLocalizedString(@"OK", nil)
-						  otherButtonTitles:nil] show];
+	if (account.accessToken && account.accessToken.length > 0) { // Only download reports for accounts with an access token.
+		if (!account.vendorID || account.vendorID.length == 0) {
+			[[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Vendor ID Missing", nil) 
+										 message:NSLocalizedString(@"You have not entered a vendor ID for this account. Please go to the account's settings and fill in the missing information.", nil) 
+										delegate:nil 
+							   cancelButtonTitle:NSLocalizedString(@"OK", nil) 
+							   otherButtonTitles:nil] show];
+		} else {
+			[[ReportDownloadCoordinator sharedReportDownloadCoordinator] downloadReportsForAccount:self.account];
+		}
 	} else {
-		[[ReportDownloadCoordinator sharedReportDownloadCoordinator] downloadReportsForAccount:account];
+		[[[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Access Token Missing", nil)
+									message:[NSString stringWithFormat:NSLocalizedString(@"Access token not set for this account. Please go to the account's settings and fill in the missing information.", nil), account.displayName]
+								   delegate:nil
+						  cancelButtonTitle:NSLocalizedString(@"OK", nil)
+						  otherButtonTitles:nil] show];
 	}
+	
 }
 
 - (void)stopDownload:(id)sender {

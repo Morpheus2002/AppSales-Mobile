@@ -24,6 +24,7 @@
 }
 
 @property (nonatomic, strong) id<ReviewDownloadCoordinatorDelegate> delegate;
+@property (nonatomic, strong) NSString *statusStr;
 
 - (instancetype)initWithProduct:(Product *)product;
 

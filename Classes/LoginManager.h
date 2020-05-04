@@ -11,26 +11,22 @@
 #import "ASAccount.h"
 #import "SecurityCodeInputController.h"
 
-@class LoginManager;
-
 extern NSString *const kITCBaseURL;
+extern NSString *const kITCUserDetailAction;
 extern NSString *const kITCPaymentVendorsAction;
 extern NSString *const kITCPaymentVendorsPaymentAction;
 
 @protocol LoginManagerDelegate <NSObject>
 
 @required
-- (void)loginSucceeded:(LoginManager *)loginManager;
-- (void)loginFailed:(LoginManager *)loginManager;
+- (void)loginSucceeded;
+- (void)loginFailed;
 
 @end
 
 @interface LoginManager : NSObject <SecurityCodeInputControllerDelegate> {
 	ASAccount *account;
 	NSDictionary *loginInfo;
-	NSMutableArray *availableProviders;
-	NSDictionary *provider;
-	NSString *providerID;
 	NSMutableArray *trustedDevices;
 	NSString *appleAuthSessionId;
 	NSString *appleAuthScnt;
@@ -48,7 +44,6 @@ extern NSString *const kITCPaymentVendorsPaymentAction;
 - (void)logIn;
 - (void)logOut;
 
-- (NSString *)providerID;
 - (NSString *)generateCSRFToken;
 - (NSDictionary *)getAccessKey:(NSString *)csrfToken;
 - (NSDictionary *)resetAccessKey:(NSString *)csrfToken;

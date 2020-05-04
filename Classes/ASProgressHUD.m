@@ -27,9 +27,9 @@
 }
 
 - (void)customInit {
-	self.bezelView.layer.cornerRadius = 9.0f;
-	self.bezelView.blurEffectStyle = UIBlurEffectStyleDark;
-	self.contentColor = [UIColor whiteColor];
+//    self.bezelView.layer.cornerRadius = 9.0f;
+//    self.bezelView.blurEffectStyle = UIBlurEffectStyleDark;
+//    self.contentColor = [UIColor whiteColor];
 }
 
 @end

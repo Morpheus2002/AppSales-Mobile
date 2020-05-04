@@ -82,6 +82,11 @@
 - (void)viewWillAppear:(BOOL)animated {
 	[super viewWillAppear:animated];
 	[self.tableView reloadData];
+    
+    //MoSS: Refresh control
+    UIRefreshControl *refreshControl = [[UIRefreshControl alloc] init];
+    [refreshControl addTarget:self action:@selector(downloadReviews) forControlEvents:UIControlEventValueChanged];
+    [self setRefreshControl:refreshControl];
 	
 	[[NSNotificationCenter defaultCenter] removeObserver:self.tableView name:NSManagedObjectContextObjectsDidChangeNotification object:account.managedObjectContext];
 	[[NSNotificationCenter defaultCenter] addObserver:self.tableView selector:@selector(reloadData) name:NSManagedObjectContextObjectsDidChangeNotification object:account.managedObjectContext];
@@ -93,6 +98,8 @@
 		statusToolbar.progress = account.downloadProgress;
 		[statusToolbar show];
 	}
+    
+
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -108,6 +115,8 @@
 	statusToolbar.progress = account.downloadProgress;
 	[statusToolbar show];
 	[coordinator downloadReviewsForAccount:account products:sortedApps];
+    //MoSS: refresh control end
+    [self.refreshControl endRefreshing];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
